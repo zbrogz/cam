@@ -3,6 +3,7 @@
 package cam
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -77,13 +78,20 @@ func (cam *Camera) connect() (*http.Response, error) {
 		req.SetBasicAuth(cam.Username, cam.Password)
 	}
 
-	client := &http.Client{}
+	// allow self-signed (insecure) certificates
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: transport}
 	return client.Do(req)
 }
 
 // stop handles signaling the connection close
 func (cam *Camera) stop() {
-	cam.body.Close()
+	// safely close
+	if cam.body != nil {
+		cam.body.Close()
+	}
 }
 
 func (cam *Camera) log(l ...interface{}) {
