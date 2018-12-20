@@ -44,8 +44,8 @@ type Camera struct {
 	Name     string // name of the camera; name will be passed along with frames
 	URL      string // url of the camera
 	Username string // optional username for authentication
-  Password string // optional password for authentication
-  AuthType string // optional authentication type (basic or digest)
+  	Password string // optional password for authentication
+  	AuthType string // optional authentication type (basic or digest)
 }
 ```
 
