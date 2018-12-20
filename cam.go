@@ -14,15 +14,18 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/SpotterRF/httpDigestAuth"
 )
 
 // A Camera is a set of configuration data for an mjpeg camera
 type Camera struct {
 	Name      string // name of the camera; name will be passed along with frames
 	URL       string // url of the camera
-	Username  string // optional username for basic authentication
-	Password  string // optional password for basic authentication
-	Log       bool   // should log
+	Username  string // optional username for authentication
+	Password  string // optional password for authentication
+	AuthType  string
+	Log       bool // should log
 	LastFrame *Frame
 	Reconnect bool          // should automatically retry
 	body      io.ReadCloser // a reference to the http response body
@@ -74,8 +77,21 @@ func (cam *Camera) connect() (*http.Response, error) {
 		return nil, err
 	}
 
-	if cam.Username != "" {
+	switch cam.AuthType {
+	case "basic":
 		req.SetBasicAuth(cam.Username, cam.Password)
+	case "digest":
+		digestAuth := &httpDigestAuth.DigestHeaders{}
+		digestAuth, err = digestAuth.Auth(cam.Username, cam.Password, cam.URL)
+		if err != nil {
+			return nil, fmt.Errorf("Error preparing digest authentication: %s", err)
+		}
+
+		if digestAuth != nil {
+			digestAuth.ApplyAuth(req)
+		} else {
+			// Status code was 200. Not adding digest headers.
+		}
 	}
 
 	// allow self-signed (insecure) certificates
